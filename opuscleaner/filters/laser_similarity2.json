@@ -1,0 +1,25 @@
+{
+    "type": "bilingual",
+    "description": "Filter a parallel dataset using LASER2/3.",
+    "parameters": {
+        "THRESHOLD": {
+            "type": "float",
+            "required": false,
+            "default": 0.5,
+            "help": "Minimum accepted LASER score."
+        },
+        "SRCLANG": {
+            "type": "str",
+            "required": true,
+            "default": null,
+            "help": "Two-letter source language code (ISO 639-1)"
+        },
+        "TGTLANG": {
+            "type": "str",
+            "required": true,
+            "default": null,
+            "help": "Two-letter target language code (ISO 639-1)"
+        }
+    },
+    "command": "../threshold.py --cache $TMPDIR/laser3.$(echo \"$SRCLANG:$TGTLANG\" | cksum | cut -d' ' -f1).dbm $THRESHOLD ./laser_similarity2.py --scores --src-lang $SRCLANG --tgt-lang $TGTLANG"
+}

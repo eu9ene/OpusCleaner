@@ -10,3 +10,5 @@ sacremoses
 spacy-pkuseg
 more_itertools
 requests
+laser_encoders
+pycountry

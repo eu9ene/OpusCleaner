@@ -1,21 +1,40 @@
 #!/usr/bin/env python3
-
+import logging
+import os
 import sys
 import time
 from typing import List, Tuple, Iterable, TypeVar, Optional, TextIO
 import argparse
 import numpy as np
-from laserembeddings import Laser
+
+os.environ["TQDM_DISABLE"] = "1"
+from laser_encoders import LaserEncoderPipeline
 from numpy.linalg import norm
 from numpy.polynomial import Polynomial
 from collections import deque
 from io import TextIOBase
+import pycountry
+from laser_encoders import download_models
+# issues with logging on model downloading
+download_models.logger.setLevel(logging.ERROR)
 
+def convert_iso_639_1_to_639_2(lang_code):
+    try:
+        # Find the language by its ISO 639-1 code (two-letter code)
+        language = pycountry.languages.get(alpha_2=lang_code)
+        # Return the ISO 639-2 code (three-letter code)
+        return language.alpha_3
+    except AttributeError:
+        # Return None if the language code is not found
+        raise ValueError(f'Language code not found: {lang_code}')
 
-def _compute_similarity(laser: Laser, batch: List[Tuple[str, str]], src_lang: str, tgt_lang: str) -> List[float]:
+def _compute_similarity(encoder_src: LaserEncoderPipeline,
+                        encoder_trg: LaserEncoderPipeline,
+                        batch: List[Tuple[str, str]]) -> List[float]:
     assert len(batch) > 0
-    embeddings_src = laser.embed_sentences([line[0] for line in batch], lang=src_lang)
-    embeddings_tgt = laser.embed_sentences([line[1] for line in batch], lang=tgt_lang)
+    embeddings_src = encoder_src.encode_sentences([line[0] for line in batch])
+    embeddings_tgt = encoder_trg.encode_sentences([line[1] for line in batch])
+    # laser in fact returns np array
     return [float(sim) for sim in _cosine_sim(embeddings_src, embeddings_tgt)]
 
 
@@ -98,12 +117,18 @@ def main():
 
     if not args.scores and args.threshold is None:
         print("Either use --threshold or --scores", file=sys.stderr)
-
-    laser = Laser()
+    # issue with reusing the same cached dir without explicitly specifying model directory
+    os.makedirs(f"data/laser_{args.src_lang}", exist_ok=True)
+    os.makedirs(f"data/laser_{args.tgt_lang}", exist_ok=True)
+    laser_encoder_src = LaserEncoderPipeline(lang=convert_iso_639_1_to_639_2(args.src_lang),
+                                             model_dir=f"data/laser_{args.src_lang}")
+    laser_encoder_trg = LaserEncoderPipeline(lang=convert_iso_639_1_to_639_2(args.tgt_lang),
+                                             model_dir=f"data/laser_{args.tgt_lang}")
 
     for batch in chunked(sys.stdin, chunk_size=args.batch_size, chunk_time=args.batch_latency, verbose=sys.stderr if args.verbose else NullIO()):
         # TODO error checking of column count?
-        scores = _compute_similarity(laser, [tuple(line.rstrip("\r\n").split("\t")[:2]) for line in batch], args.src_lang, args.tgt_lang)
+        scores = _compute_similarity(laser_encoder_src, laser_encoder_trg,
+                                     [tuple(line.rstrip("\r\n").split("\t")[:2]) for line in batch])
 
         if args.scores:
             for score in scores:
