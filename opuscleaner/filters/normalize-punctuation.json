@@ -1,0 +1,20 @@
+{
+    "description": "Normalizes punctuation'",
+    "type": "monolingual",
+    "command": "./normalize-punctuation.perl -language $LANG1",
+    "parameters": {
+        "LANG1":
+        {
+            "type": "str",
+            "default": "en",
+            "allowed_values":
+            [
+                "en",
+                "cs",
+                "fr",
+                "it",
+                "other"
+            ]
+        }
+    }
+}
