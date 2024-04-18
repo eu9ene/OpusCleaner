@@ -1,0 +1,38 @@
+{
+    "type": "bilingual",
+    "description": "Filtering with Bicleaner AI",
+    "command": "export BICLEANER_AI_THREADS=$(nproc) && ../threshold.py --cache $TMPDIR/bicleaner.$(echo \"$MODEL_ID:$SOURCE_COLUMN:$TARGET_COLUMN\" | cksum | cut -d' ' -f1).dbm $THRESHOLD bicleaner-ai-classify ${DISABLE_HARDRULES:+--disable_hardrules}  --scol ${SOURCE_COLUMN} --tcol ${TARGET_COLUMN} --quiet --score_only - - ${MODEL_ID}",
+    "parameters":
+    {
+        "THRESHOLD":
+        {
+            "type": "float",
+            "default": 0.5,
+            "help": "Threshold for scoring."
+        },
+        "SOURCE_COLUMN":
+        {
+            "type": "int",
+            "default": 1,
+            "help": "Model source language column in the dataset"
+        },
+        "TARGET_COLUMN":
+        {
+            "type": "int",
+            "default": 2,
+            "help": "Model target language column in the dataset"
+        },
+        "MODEL_ID":
+        {
+            "type": "str",
+            "default": "bitextor/bicleaner-ai-full-en-xx",
+            "help": "Model ID on HF, for example bitextor/bicleaner-ai-full-en-xx"
+        },
+        "DISABLE_HARDRULES":
+        {
+            "type": "bool",
+            "default": true,
+            "help": "Disables hard rules (for multilingual model)"
+        }
+    }
+}

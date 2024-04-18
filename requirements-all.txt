@@ -11,4 +11,7 @@ spacy-pkuseg
 more_itertools
 requests
 laser_encoders
+tensorboardX
 pycountry
+bicleaner-ai
+tensorflow[and-cuda]==2.11.0
